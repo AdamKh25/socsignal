@@ -268,6 +268,7 @@ The CI workflow includes:
 - Ruff formatting and lint checks
 - pytest automated tests
 - PowerShell 5.1 synthetic Windows event collector tests
+- Simulated Security-log access-denied tests
 
 All CI tests use synthetic security events.
 

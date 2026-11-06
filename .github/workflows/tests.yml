@@ -82,3 +82,6 @@ jobs:
 
       - name: Test Security event collectors
         run: .\tests\test_security_exporter.ps1
+
+      - name: Test Security log permission handling
+        run: .\tests\test_permissions.ps1
