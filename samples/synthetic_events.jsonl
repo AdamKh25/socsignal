@@ -1,0 +1,5 @@
+{"event_id":4625,"timestamp":"2026-11-06T00:30:00+02:00","log_name":"Security","record_id":1001,"computer":"LAB-WIN11","event_data":{"target_user":"demo.user","source_ip":"192.0.2.10"}}
+{"event_id":4625,"timestamp":"2026-11-06T00:31:00+02:00","log_name":"Security","record_id":1002,"computer":"LAB-WIN11","event_data":{"target_user":"demo.user","source_ip":"192.0.2.10"}}
+{"event_id":4625,"timestamp":"2026-11-06T00:32:00+02:00","log_name":"Security","record_id":1003,"computer":"LAB-WIN11","event_data":{"target_user":"demo.user","source_ip":"192.0.2.10"}}
+{"event_id":4720,"timestamp":"2026-11-06T00:35:00+02:00","log_name":"Security","record_id":1004,"computer":"LAB-WIN11","event_data":{"target_user":"training-account","subject_user":"LAB-ADMIN"}}
+{"event_id":7045,"timestamp":"2026-11-06T00:40:00+02:00","log_name":"System","record_id":1005,"computer":"LAB-WIN11","event_data":{"service_name":"DemoUpdater","start_type":"automatic"}}

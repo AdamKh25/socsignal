@@ -1,0 +1,25 @@
+# Python environment
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
+
+# Editor and OS
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Sensitive event data and generated output
+*.evtx
+*.jsonl
+!samples/synthetic*.jsonl
+exports/
+reports/
+data/
+*.log
