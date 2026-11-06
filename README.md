@@ -31,7 +31,7 @@ SOCSignal is an open-source cybersecurity portfolio project combining PowerShell
 
 ## Project Status
 
-Version 0.1.0 release candidate.
+Version 0.1.0 - Initial Release.
 
 SOCSignal implements Windows event collection, detection rules,
 SOC triage reporting, a command-line interface, and automated tests.
