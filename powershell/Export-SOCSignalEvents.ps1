@@ -1,11 +1,11 @@
 <#
 .SYNOPSIS
-    Collect Windows service installation events for SOCSignal.
+    Export selected Windows security events to JSONL.
 
 .DESCRIPTION
-    Exports selected System Event ID 7045 records to JSONL.
-    The output is local and excluded from Git.
-    This script does not modify Windows security settings.
+    Supports Event IDs 4625, 4720, and 7045.
+    Writes structured event data to a local JSONL file.
+    Does not modify Windows security settings.
 #>
 
 [CmdletBinding()]
@@ -16,6 +16,9 @@ param(
     [ValidateRange(1, 100)]
     [int]$MaxEvents = 20,
 
+    [ValidateSet(4625, 4720, 7045)]
+    [int]$EventId = 7045,
+
     [string]$OutputPath
 )
 
@@ -23,13 +26,22 @@ $ErrorActionPreference = 'Stop'
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $outputDir = Join-Path $projectRoot 'exports'
+
+$logName = if ($EventId -eq 7045) {
+    'System'
+}
+else {
+    'Security'
+}
+
 if ([string]::IsNullOrWhiteSpace($OutputPath)) {
-    $OutputPath = Join-Path $outputDir 'system_7045.jsonl'
+    $fileName = '{0}_{1}.jsonl' -f $logName.ToLower(), $EventId
+    $OutputPath = Join-Path $outputDir $fileName
 }
 
 $filter = @{
-    LogName = 'System'
-    Id = 7045
+    LogName = $logName
+    Id = $EventId
     StartTime = (Get-Date).AddDays(-$DaysBack)
 }
 
@@ -40,60 +52,99 @@ try {
     )
 }
 catch {
-    if ($_.FullyQualifiedErrorId -like 'NoMatchingEventsFound*') {
-        Write-Host 'No matching service installation events found.'
-        return
+    if ($_.FullyQualifiedErrorId -like '*NoMatchingEventsFound*') {
+        $events = @()
     }
-
-    throw "Unable to query System events: $($_.FullyQualifiedErrorId)"
+    else {
+        throw "Unable to query $logName event $EventId : $($_.FullyQualifiedErrorId)"
+    }
 }
 
-$lines = foreach ($entry in $events) {
-    $xml = [xml]$entry.ToXml()
-    $fields = @{}
+$lines = @(
+    foreach ($entry in $events) {
+        $xml = [xml]$entry.ToXml()
+        $fields = @{}
 
-    foreach ($node in $xml.Event.EventData.Data) {
-        $name = $node.GetAttribute('Name')
+        foreach ($node in @($xml.Event.EventData.Data)) {
+            if ($null -eq $node) {
+                continue
+            }
 
-        if ($name) {
-            $fields[$name] = $node.InnerText
+            $name = $node.GetAttribute('Name')
+
+            if ($name) {
+                $fields[$name] = $node.InnerText
+            }
         }
-    }
 
-    if ([string]::IsNullOrWhiteSpace($fields['ServiceName'])) {
-        throw "Event record $($entry.RecordId) has no service name."
-    }
+        $eventData = switch ($EventId) {
+            4625 {
+                @{
+                    target_user = $fields['TargetUserName']
+                    source_ip = $fields['IpAddress']
+                    logon_type = $fields['LogonType']
+                    status = $fields['Status']
+                }
+            }
 
-    $record = [ordered]@{
-        event_id = 7045
-        timestamp = $entry.TimeCreated.ToUniversalTime().ToString(
-            'yyyy-MM-ddTHH:mm:ss.fffZ'
-        )
-        log_name = 'System'
-        record_id = $entry.RecordId
-        computer = $entry.MachineName
-        event_data = @{
-            service_name = $fields['ServiceName']
-            start_type = $fields['StartType']
+            4720 {
+                @{
+                    target_user = $fields['TargetUserName']
+                    subject_user = $fields['SubjectUserName']
+                }
+            }
+
+            7045 {
+                @{
+                    service_name = $fields['ServiceName']
+                    start_type = $fields['StartType']
+                }
+            }
         }
+
+        $requiredField = if ($EventId -eq 7045) {
+            'service_name'
+        }
+        else {
+            'target_user'
+        }
+
+        if ([string]::IsNullOrWhiteSpace(
+            $eventData[$requiredField]
+        )) {
+            throw "Required field missing in event record $($entry.RecordId)."
+        }
+
+        $record = [ordered]@{
+            event_id = $EventId
+            timestamp = $entry.TimeCreated.ToUniversalTime().ToString(
+                'yyyy-MM-ddTHH:mm:ss.fffZ'
+            )
+            log_name = $logName
+            record_id = $entry.RecordId
+            computer = $entry.MachineName
+            event_data = $eventData
+        }
+
+        ConvertTo-Json -InputObject $record -Depth 4 -Compress
     }
+)
 
-    ConvertTo-Json -InputObject $record -Depth 4 -Compress
-}
+$destination = Split-Path -Path $OutputPath -Parent
 
-$destination = Split-Path -Path $outputPath -Parent
 if ($destination) {
-    [System.IO.Directory]::CreateDirectory($destination) | Out-Null
+    [System.IO.Directory]::CreateDirectory(
+        $destination
+    ) | Out-Null
 }
 
 $encoding = New-Object System.Text.UTF8Encoding($false)
 
 [System.IO.File]::WriteAllLines(
-    $outputPath,
+    $OutputPath,
     [string[]]$lines,
     $encoding
 )
 
-Write-Host "Exported $($lines.Count) service installation events."
-Write-Host "Output: $outputPath"
-
+Write-Host "Exported $($lines.Count) events (ID $EventId)."
+Write-Host "Output: $OutputPath"

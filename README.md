@@ -49,30 +49,57 @@ MIT License. See [LICENSE](LICENSE).
 
 ## PowerShell Event Collector
 
-The initial collector supports Windows System Event ID 7045,
-which records service installations.
+SOCSignal collects selected Windows Security and System events
+using Windows PowerShell 5.1 and Get-WinEvent.
+
+### Supported Events
+
+| Event ID | Log | Description |
+| --- | --- | --- |
+| 4625 | Security | Failed logon |
+| 4720 | Security | User account created |
+| 7045 | System | Service installed |
+
+### Usage
 
 Run from the project root:
 
 ```powershell
-.\powershell\Export-SOCSignalEvents.ps1 -DaysBack 30 -MaxEvents 20
+.\powershell\Export-SOCSignalEvents.ps1 -EventId 4625 -DaysBack 7 -MaxEvents 20
 ```
 
-By default, the collector writes to:
+For account creation events:
 
-`exports/system_7045.jsonl`
+```powershell
+.\powershell\Export-SOCSignalEvents.ps1 -EventId 4720 -DaysBack 7
+```
 
-This directory is excluded from Git.
+For service installation events:
 
-The collector exports timestamps in UTC and includes selected
-service metadata. It does not export complete event messages.
+```powershell
+.\powershell\Export-SOCSignalEvents.ps1 -EventId 7045 -DaysBack 30
+```
+
+Event ID 7045 is the default.
+
+The collector creates JSONL files in the local exports directory.
+Output files are excluded from Git.
+
+The collector normalizes timestamps to UTC and exports selected
+event metadata rather than full Windows event messages.
+
+When a query returns no matching events, the output file is empty.
+
+Security log access depends on Windows permissions.
+The collector does not modify Windows security settings.
 
 ### Testing
 
-Run the synthetic PowerShell test:
+Run the synthetic PowerShell tests:
 
 ```powershell
 .\tests\test_exporter.ps1
+.\tests\test_security_exporter.ps1
 ```
 
 Run Python tests and lint checks:
@@ -82,14 +109,15 @@ Run Python tests and lint checks:
 .\.venv\Scripts\python.exe -m ruff check .
 ```
 
-The PowerShell test mocks Get-WinEvent and does not access
-real Windows logs.
+Synthetic tests mock Get-WinEvent and do not read actual Windows logs.
 
-### Privacy
+### Security and Privacy
 
-Collected events may contain sensitive hostnames and service names.
+Real event exports may contain sensitive usernames,
+hostnames, IP addresses, and service information.
 
-Do not publish real event exports. When specifying a custom
-output path, use a private location excluded from version control.
+Never commit real event exports or private investigation data.
 
-Security Event IDs 4625 and 4720 are planned for a later version.
+Custom output paths must point to private, Git-ignored locations.
+
+SOCSignal is intended for authorized defensive security analysis.
