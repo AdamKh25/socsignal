@@ -310,5 +310,16 @@ When a JSONL input cannot be read or validated:
 Analysts should confirm that a report corresponds to
 their latest successful analysis before using its findings.
 
-These checks do not yet guarantee atomic report writes
-if an output failure occurs during report generation.
+### Atomic Report Writing
+
+SOCSignal writes a report to a temporary file in the
+destination directory before replacing the final report.
+
+- Successful analysis replaces the existing report.
+- Failed writes or replacements report an error.
+- An existing report is preserved if replacement fails.
+- Temporary files are cleaned up after normal failures.
+
+This reduces the risk of incomplete reports on local
+filesystems. It does not guarantee protection against
+all hardware failures, power loss, or filesystem errors.

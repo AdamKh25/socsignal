@@ -82,3 +82,39 @@ def test_cli_warns_about_stale_report(tmp_path, monkeypatch, capsys):
     assert exc.value.code == 1
     assert report.read_text(encoding="utf-8") == ("PREVIOUS_SYNTHETIC_REPORT")
     assert "existing report may be stale" in capsys.readouterr().err
+
+
+def test_cli_replaces_existing_report(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+
+    report = tmp_path / "reports" / "triage.md"
+    report.parent.mkdir()
+    report.write_text("OLD_SYNTHETIC_REPORT", encoding="utf-8")
+
+    result = main([str(SAMPLE)])
+
+    assert result == 0
+    assert "Events analyzed: 5" in report.read_text(encoding="utf-8")
+    assert "OLD_SYNTHETIC_REPORT" not in report.read_text(encoding="utf-8")
+    assert not list(report.parent.glob(".triage-*.tmp"))
+
+
+def test_cli_preserves_report_on_replace_failure(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+
+    report = tmp_path / "reports" / "triage.md"
+    report.parent.mkdir()
+    report.write_text("OLD_SYNTHETIC_REPORT", encoding="utf-8")
+
+    def fail_replace(self, target):
+        raise OSError("Synthetic replacement failure")
+
+    monkeypatch.setattr(Path, "replace", fail_replace)
+
+    with pytest.raises(SystemExit) as exc:
+        main([str(SAMPLE)])
+
+    assert exc.value.code == 1
+    assert report.read_text(encoding="utf-8") == ("OLD_SYNTHETIC_REPORT")
+    assert "existing report may be stale" in capsys.readouterr().err
+    assert not list(report.parent.glob(".triage-*.tmp"))

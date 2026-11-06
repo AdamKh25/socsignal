@@ -1,6 +1,7 @@
 """Command-line interface for SOCSignal."""
 
 import argparse
+import tempfile
 from pathlib import Path
 
 from socsignal.reader import EventFormatError, read_events
@@ -36,11 +37,35 @@ def main(argv: list[str] | None = None) -> int:
     report = build_triage_report(events)
     output = Path("reports/triage.md")
 
+    temporary_path = None
+
     try:
         output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(report, encoding="utf-8")
+
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            newline="\n",
+            dir=output.parent,
+            prefix=".triage-",
+            suffix=".tmp",
+            delete=False,
+        ) as temporary_file:
+            temporary_path = Path(temporary_file.name)
+            temporary_file.write(report)
+
+        temporary_path.replace(output)
+
     except OSError as exc:
-        parser.exit(1, f"Error writing report: {exc}\n")
+        parser.exit(
+            1,
+            f"Error writing report: {exc}\n"
+            "Report not updated; an existing report may be stale.\n",
+        )
+
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
 
     print("SOCSignal analysis complete.")
     print(f"Events analyzed: {len(events)}")
