@@ -27,7 +27,7 @@ def main(argv: list[str] | None = None) -> int:
     for path in args.inputs:
         try:
             events.extend(read_events(path))
-        except (OSError, EventFormatError) as exc:
+        except (OSError, UnicodeError, EventFormatError) as exc:
             parser.exit(
                 1,
                 f"Error reading {path}: {exc}\n"

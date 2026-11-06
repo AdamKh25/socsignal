@@ -118,3 +118,22 @@ def test_cli_preserves_report_on_replace_failure(tmp_path, monkeypatch, capsys):
     assert report.read_text(encoding="utf-8") == ("OLD_SYNTHETIC_REPORT")
     assert "existing report may be stale" in capsys.readouterr().err
     assert not list(report.parent.glob(".triage-*.tmp"))
+
+
+def test_cli_rejects_invalid_utf8(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+
+    report = tmp_path / "reports" / "triage.md"
+    report.parent.mkdir()
+    report.write_text("PREVIOUS_REPORT", encoding="utf-8")
+
+    invalid = tmp_path / "corrupted.jsonl"
+    invalid.write_bytes(b"\xff")
+
+    with pytest.raises(SystemExit) as exc:
+        main([str(invalid)])
+
+    assert exc.value.code == 1
+    assert report.read_text(encoding="utf-8") == "PREVIOUS_REPORT"
+    assert "existing report may be stale" in capsys.readouterr().err
+    assert not list(report.parent.glob(".triage-*.tmp"))

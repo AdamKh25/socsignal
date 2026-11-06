@@ -27,11 +27,17 @@ SOCSignal is an open-source cybersecurity portfolio project combining PowerShell
 - Windows PowerShell 5.1
 - pytest
 - Ruff
-- GitHub Actions (planned)
+- GitHub Actions
 
 ## Project Status
 
-Initial development. Features will be added and tested incrementally.
+Version 0.1.0 release candidate.
+
+SOCSignal implements Windows event collection, detection rules,
+SOC triage reporting, a command-line interface, and automated tests.
+
+This is an experimental defensive security toolkit and not a
+production SIEM or a substitute for professional investigation.
 
 ## Security and Privacy
 
@@ -300,7 +306,7 @@ completeness of previously collected event records.
 
 ## CLI Report Freshness
 
-When a JSONL input cannot be read or validated:
+When a JSONL input cannot be read, decoded as UTF-8, or validated:
 
 - SOCSignal reports the input error.
 - No new triage report is generated.
