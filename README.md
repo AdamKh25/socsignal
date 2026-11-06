@@ -1,4 +1,4 @@
-﻿# SOCSignal
+# SOCSignal
 
 Windows Security Event Detection & Triage Toolkit
 
@@ -297,3 +297,18 @@ of an existing export.
 
 These safeguards do not guarantee the freshness or
 completeness of previously collected event records.
+
+## CLI Report Freshness
+
+When a JSONL input cannot be read or validated:
+
+- SOCSignal reports the input error.
+- No new triage report is generated.
+- A previous report is preserved.
+- The CLI warns that an existing report may be stale.
+
+Analysts should confirm that a report corresponds to
+their latest successful analysis before using its findings.
+
+These checks do not yet guarantee atomic report writes
+if an output failure occurs during report generation.

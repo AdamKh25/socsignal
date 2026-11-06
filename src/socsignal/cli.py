@@ -27,7 +27,11 @@ def main(argv: list[str] | None = None) -> int:
         try:
             events.extend(read_events(path))
         except (OSError, EventFormatError) as exc:
-            parser.exit(1, f"Error reading {path}: {exc}\n")
+            parser.exit(
+                1,
+                f"Error reading {path}: {exc}\n"
+                "No report written; an existing report may be stale.\n",
+            )
 
     report = build_triage_report(events)
     output = Path("reports/triage.md")

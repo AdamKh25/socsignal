@@ -64,3 +64,21 @@ def test_cli_handles_empty_file(tmp_path, monkeypatch):
     assert result == 0
     assert "Events analyzed: 0" in report
     assert "No detection rules matched" in report
+
+
+def test_cli_warns_about_stale_report(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+
+    report = tmp_path / "reports" / "triage.md"
+    report.parent.mkdir()
+    report.write_text("PREVIOUS_SYNTHETIC_REPORT", encoding="utf-8")
+
+    invalid = tmp_path / "invalid.jsonl"
+    invalid.write_text("invalid json\n", encoding="utf-8")
+
+    with pytest.raises(SystemExit) as exc:
+        main([str(invalid)])
+
+    assert exc.value.code == 1
+    assert report.read_text(encoding="utf-8") == ("PREVIOUS_SYNTHETIC_REPORT")
+    assert "existing report may be stale" in capsys.readouterr().err
