@@ -121,3 +121,81 @@ Never commit real event exports or private investigation data.
 Custom output paths must point to private, Git-ignored locations.
 
 SOCSignal is intended for authorized defensive security analysis.
+
+## Detection Rules
+
+SOCSignal includes a Python detection engine that analyzes
+normalized Windows security events.
+
+### Implemented Rules
+
+| Rule ID | Detection | Severity |
+| --- | --- | --- |
+| SOC-001 | Repeated failed logons | Medium |
+| SOC-002 | New Windows account created | Low |
+| SOC-003 | New Windows service installed | Low |
+
+### SOC-001: Repeated Failed Logons
+
+Detects repeated Event ID 4625 failures grouped by:
+
+- Computer
+- Source IP address
+- Target account
+
+Default threshold: 3 failed logons within 5 minutes.
+
+Both the threshold and time window are configurable.
+
+The rule uses a sliding time window and avoids counting
+duplicate Windows event record IDs within each group.
+
+Version 1 produces the first qualifying burst alert per group.
+
+### SOC-002: Account Creation
+
+Flags Event ID 4720 for analyst review.
+
+Includes the target account, initiating account when
+available, timestamp, and supporting event record ID.
+
+### SOC-003: Service Installation
+
+Flags Event ID 7045 for analyst review.
+
+Includes the service name, startup type, timestamp,
+and supporting event record ID.
+
+### Detection Example
+
+The Python API can be used with the included synthetic events:
+
+```python
+from socsignal.reader import read_events
+from socsignal.detections import (
+    detect_failed_logon_bursts,
+    detect_noteworthy_activity,
+)
+
+events = read_events("samples/synthetic_events.jsonl")
+
+alerts = (
+    detect_failed_logon_bursts(events)
+    + detect_noteworthy_activity(events)
+)
+
+for alert in alerts:
+    print(alert["rule_id"], alert["title"], alert["severity"])
+```
+
+The included synthetic sample generates three review alerts.
+
+### Detection Limitations
+
+- Alerts indicate activity requiring review, not confirmed attacks.
+- Repeated failed logons can result from legitimate user mistakes.
+- Account creation and service installation may be authorized.
+- Detection is currently performed on supplied event records.
+- Automated triage reports and a command-line interface are planned.
+
+All detection tests use synthetic data.
