@@ -46,3 +46,50 @@ The project does not modify Windows security settings.
 ## License
 
 MIT License. See [LICENSE](LICENSE).
+
+## PowerShell Event Collector
+
+The initial collector supports Windows System Event ID 7045,
+which records service installations.
+
+Run from the project root:
+
+```powershell
+.\powershell\Export-SOCSignalEvents.ps1 -DaysBack 30 -MaxEvents 20
+```
+
+By default, the collector writes to:
+
+`exports/system_7045.jsonl`
+
+This directory is excluded from Git.
+
+The collector exports timestamps in UTC and includes selected
+service metadata. It does not export complete event messages.
+
+### Testing
+
+Run the synthetic PowerShell test:
+
+```powershell
+.\tests\test_exporter.ps1
+```
+
+Run Python tests and lint checks:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m ruff check .
+```
+
+The PowerShell test mocks Get-WinEvent and does not access
+real Windows logs.
+
+### Privacy
+
+Collected events may contain sensitive hostnames and service names.
+
+Do not publish real event exports. When specifying a custom
+output path, use a private location excluded from version control.
+
+Security Event IDs 4625 and 4720 are planned for a later version.
