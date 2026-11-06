@@ -1,4 +1,4 @@
-# SOCSignal
+﻿# SOCSignal
 
 Windows Security Event Detection & Triage Toolkit
 
@@ -275,3 +275,25 @@ All CI tests use synthetic security events.
 No private Windows event logs are collected or uploaded.
 
 Workflow: `.github/workflows/tests.yml`
+
+## Failed Collection Safety
+
+SOCSignal does not silently treat Windows Security log
+access-denied errors as successful event collection.
+
+When an event query fails:
+
+- The collector reports an error.
+- No new export is written.
+- Existing exports are preserved.
+- The error warns that previous output may be stale.
+
+Analysts must verify the freshness of existing exports
+before using them as evidence.
+
+Synthetic PowerShell tests cover permission failures for
+Windows Event IDs 4625 and 4720, including preservation
+of an existing export.
+
+These safeguards do not guarantee the freshness or
+completeness of previously collected event records.

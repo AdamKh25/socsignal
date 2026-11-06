@@ -31,6 +31,16 @@ try {
         $output = Join-Path $tempDir "denied_$id.jsonl"
         $failureReported = $false
 
+        if ($id -eq 4720) {
+            [System.IO.Directory]::CreateDirectory($tempDir) | Out-Null
+
+            [System.IO.File]::WriteAllText(
+                $output,
+                'PRIOR_EXPORT_DO_NOT_OVERWRITE',
+                [System.Text.Encoding]::ASCII
+            )
+        }
+
         try {
             & $collector -EventId $id -DaysBack 1 `
                 -MaxEvents 1 -OutputPath $output
@@ -40,6 +50,10 @@ try {
                 throw
             }
 
+            if ($_.Exception.Message -notlike '*existing output may be stale*') {
+                throw "Event ${id}: missing stale export warning."
+            }
+
             $failureReported = $true
         }
 
@@ -47,8 +61,17 @@ try {
             throw "Event ${id}: access denial was not reported."
         }
 
-        if (Test-Path -LiteralPath $output) {
-            throw "Event ${id}: unexpected export created."
+        if ($id -eq 4625) {
+            if (Test-Path -LiteralPath $output) {
+                throw "Event ${id}: unexpected export created."
+            }
+        }
+        else {
+            $previous = [System.IO.File]::ReadAllText($output)
+
+            if ($previous -ne 'PRIOR_EXPORT_DO_NOT_OVERWRITE') {
+                throw "Event ${id}: previous export was modified."
+            }
         }
 
         Write-Host "Event $id access-denied test: PASSED"

@@ -56,7 +56,7 @@ catch {
         $events = @()
     }
     else {
-        throw "Unable to query $logName event $EventId : $($_.FullyQualifiedErrorId)"
+        throw "Unable to query $logName event ${EventId}: $($_.FullyQualifiedErrorId). No export written; existing output may be stale."
     }
 }
 
