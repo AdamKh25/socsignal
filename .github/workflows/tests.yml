@@ -1,0 +1,84 @@
+name: SOCSignal CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Python tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Install development dependencies
+        run: python -m pip install -e ".[dev]"
+
+      - name: Check Python formatting
+        run: python -m ruff format --check .
+
+      - name: Check Python linting
+        run: python -m ruff check .
+
+      - name: Run Python tests
+        run: python -m pytest -q
+
+  powershell:
+    name: PowerShell collector tests
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: powershell
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Create test environment
+        run: |
+          python -m venv .venv
+          .\.venv\Scripts\python.exe -m pip install -e '.[dev]'
+
+      - name: Verify PowerShell collector syntax
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path '.\powershell\Export-SOCSignalEvents.ps1').Path,
+              [ref]$tokens,
+              [ref]$parseErrors
+          ) | Out-Null
+          if ($parseErrors.Count -gt 0) {
+              $parseErrors | Format-List
+              throw 'PowerShell collector syntax failed.'
+          }
+
+      - name: Test service installation collector
+        run: .\tests\test_exporter.ps1
+
+      - name: Test Security event collectors
+        run: .\tests\test_security_exporter.ps1

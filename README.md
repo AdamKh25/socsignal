@@ -256,3 +256,21 @@ The tool does not modify security settings or automatically
 remediate detected activity.
 
 Real Windows event exports and reports must remain private.
+
+## Continuous Integration
+
+GitHub Actions runs automated checks on every push to main
+and on pull requests.
+
+The CI workflow includes:
+
+- Python 3.13 testing on Windows and Ubuntu
+- Ruff formatting and lint checks
+- pytest automated tests
+- PowerShell 5.1 synthetic Windows event collector tests
+
+All CI tests use synthetic security events.
+
+No private Windows event logs are collected or uploaded.
+
+Workflow: `.github/workflows/tests.yml`
