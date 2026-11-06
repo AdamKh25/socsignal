@@ -179,10 +179,7 @@ from socsignal.detections import (
 
 events = read_events("samples/synthetic_events.jsonl")
 
-alerts = (
-    detect_failed_logon_bursts(events)
-    + detect_noteworthy_activity(events)
-)
+alerts = detect_failed_logon_bursts(events) + detect_noteworthy_activity(events)
 
 for alert in alerts:
     print(alert["rule_id"], alert["title"], alert["severity"])
@@ -196,6 +193,66 @@ The included synthetic sample generates three review alerts.
 - Repeated failed logons can result from legitimate user mistakes.
 - Account creation and service installation may be authorized.
 - Detection is currently performed on supplied event records.
-- Automated triage reports and a command-line interface are planned.
+- Markdown triage reports and a command-line interface are implemented.
 
 All detection tests use synthetic data.
+
+## SOC Triage Reports and CLI
+
+SOCSignal generates Markdown reports containing:
+
+- Executive summary and alert counts
+- Security activity counts for Events 4625, 4720, and 7045
+- Detection rules and alert severity
+- Affected hosts, timestamps, and supporting event record IDs
+- Recommended investigation steps
+- Analyst notes and a lightweight audit activity snapshot
+
+### Run SOCSignal
+
+Install the project and development dependencies:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e '.[dev]'
+```
+
+Analyze the included synthetic events:
+
+```powershell
+.\.venv\Scripts\socsignal.exe samples\synthetic_events.jsonl
+```
+
+Alternatively, use the Python module:
+
+```powershell
+.\.venv\Scripts\python.exe -m socsignal.cli samples\synthetic_events.jsonl
+```
+
+Multiple JSONL files can be analyzed together by providing
+additional input paths.
+
+Avoid supplying the same export more than once, since the
+activity snapshot counts supplied records.
+
+### Report Output
+
+The CLI generates:
+
+`reports/triage.md`
+
+Generated reports are excluded from Git.
+
+The report includes a lightweight audit activity summary,
+but it is not a formal compliance assessment.
+
+### Important Limitations
+
+SOCSignal is a defensive analysis toolkit, not a SIEM.
+
+Detection findings require analyst validation. The absence
+of alerts does not establish that a system is secure.
+
+The tool does not modify security settings or automatically
+remediate detected activity.
+
+Real Windows event exports and reports must remain private.
